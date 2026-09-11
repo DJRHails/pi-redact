@@ -1,0 +1,36 @@
+{
+  "name": "pi-redact",
+  "version": "0.1.0",
+  "description": "Redacts env secrets before they reach the LLM provider and restores them in the response — palst-style exact-value markers, scoped to the pi session",
+  "keywords": ["pi-package", "pi-extension", "secrets", "redaction", "privacy"],
+  "license": "MIT",
+  "author": "DJRHails",
+  "type": "module",
+  "homepage": "https://github.com/DJRHails/pi-redact#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DJRHails/pi-redact"
+  },
+  "files": ["extensions", "src", "README.md", "LICENSE"],
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "oxlint extensions src tests redteam",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "0.85.1",
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "@types/node": "22.20.2",
+    "oxlint": "1.82.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules/
+.data/
+redteam/results/
+*.log
+pnpm-workspace.yaml

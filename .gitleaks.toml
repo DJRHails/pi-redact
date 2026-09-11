@@ -1,0 +1,7 @@
+# Detector fixtures in the unit tests are token-shaped by construction; every
+# value there is synthetic and documented as such. Nothing else is allowlisted.
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''tests/detectors\.test\.ts''']
