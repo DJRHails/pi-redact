@@ -27,7 +27,7 @@ The process mirrors [palst](https://github.com/safety-research/palst)'s transcri
 - `.env` and `.env.*` files in the working directory (minus `.example`/`.sample`/`.template`/`.dist`), plus any files listed in `PI_REDACT_ENV_FILES` (`:`-separated).
 - Assignment lines that scroll past in `bash` or `read` tool output (`env`, `cat config/secrets.env`): learned on the spot and redacted from the very next request.
 
-Values shorter than 8 characters and obvious placeholders (`<your-key>`, `changeme`, `${OTHER_VAR}`) are ignored so ordinary words like `false` are never rewritten. Duplicate values keep the first name that introduced them; a name reused for a different value becomes `NAME#2`.
+Values shorter than 8 characters, common configuration words (`production`, `disabled`, `localhost`, …) and obvious placeholders (`<your-key>`, `changeme`, `${OTHER_VAR}`) are ignored, so `FEATURE_TOKEN_ENABLED=True` or `SESSION_SECRET_MODE=production` reach the model as written. A value that *is* redacted but is not really a credential, say `INGEST_SECRET_HOST=hails.info`, still works: the model uses the marker inside the URL or command and the real value is substituted before the tool runs (the `hostname-placeholder` scenario checks exactly this). Duplicate values keep the first name that introduced them; a name reused for a different value becomes `NAME#2`.
 
 **Detected credentials** (`[REDACTED:<KIND>:<hash>]`), for values that never passed through a named variable: PEM private-key blocks, AWS access key ids, GitHub tokens, Anthropic and OpenAI keys, Google API keys, Hugging Face tokens, Slack tokens, signed JWTs, and `Authorization: Bearer …` values. The hash is a salted SHA-256 prefix; the salt is minted per session, so the same credential yields the same marker for the whole session (prompt caches stay warm) and a different one anywhere else.
 
@@ -45,16 +45,26 @@ The marker table lives in memory for one session and is never written to disk.
 
 ## Verification
 
-`pnpm check` runs oxlint, `tsc --noEmit`, and the unit suite (vault, harvesting, detectors, fetch guard).
+`pnpm check` runs oxlint, `tsc --noEmit`, the unit suite (vault, harvesting, detectors, fetch guard) and the cached end-to-end suite.
 
-`redteam/` drives real model calls through a local logging proxy and asserts on the bytes that leave the process:
+**Cached end-to-end tests** (`tests/e2e`) drive a real pi session with the extension loaded, behind a recording proxy, for every high-risk scenario. Provider responses replay from committed cassettes, so the default run is offline, deterministic, and takes about two seconds; the assertions are still made against the bytes the session put on the wire and the effects of restored values (a file written, a local server authenticating). Cassettes hold only markers, never the planted values.
 
 ```sh
-node redteam/run.ts --model claude-haiku-4-5 --repeat 3   # leak scenarios → redteam/results/<ts>/report.md
+pnpm test:e2e                     # replay from tests/e2e/cassettes (default)
+pnpm test:e2e:record              # re-record against the API (needs ANTHROPIC_API_KEY)
+PI_REDACT_E2E=record pnpm test:e2e -t echo-env   # re-record one scenario
+```
+
+Determinism comes from `redteam/scenarios.ts`: fixed fake secrets, a fixed working directory per scenario, a fixed check-server port, and a fixed marker salt via `PI_REDACT_SALT` (unset in normal use, where the salt is random per session).
+
+**Live red-team** runs the same scenarios plus the adversarial ones against the API and writes a report:
+
+```sh
+node redteam/run.ts --model claude-haiku-4-5 --repeat 3   # → redteam/results/<ts>/report.md
 node redteam/degrade.ts --repeat 3                         # same tasks with/without the extension
 ```
 
-Scenarios cover: env values printed by tools, a curl header round-trip against a local server that only accepts the real token, markers inside `write`-tool arguments, secrets learned from a file the model `cat`s, JSON-escaped passwords, credentials pasted into the prompt, vendor-shaped values under innocuous variable names, and forced compaction. Adversarial cases (base64 re-encoding, printing a value in halves, asking the model to reveal a marker character by character) are included and reported as known limitations.
+Scenarios cover: env values printed by tools, a curl header round-trip against a local server that only accepts the real token, markers inside `write`-tool arguments, secrets learned from a file the model `cat`s, JSON-escaped passwords, credentials pasted into the prompt, vendor-shaped values under innocuous variable names, booleans and config words that must *not* be redacted, a redacted host:port used inside a URL, and forced compaction. Adversarial cases (base64 re-encoding, printing a value in halves, asking the model to reveal a marker character by character) are included and reported as known limitations.
 
 ## Limitations
 

@@ -143,7 +143,7 @@ async function runOnce(task: Task, redact: boolean, modelId: string): Promise<Ru
   return {
     task: task.name,
     redact,
-    pass: !error && task.check(cwd, answer, check.received),
+    pass: !error && task.check(cwd, answer, check.received.map((r) => r.authorization)),
     turns: transcript.usage.turns,
     inputTokens: transcript.usage.input,
     outputTokens: transcript.usage.output,

@@ -10,8 +10,14 @@ src/known-secrets.ts   — harvest exact values from env, .env files, tool outpu
 src/detectors.ts       — structural credential regexes (palst pii_rules.py credential subset + vendor prefixes)
 src/vault.ts           — session-scoped marker↔value table, exact-value replacement both ways, payload deep walk
 src/fetch-guard.ts     — globalThis.fetch wrapper: backstop for provider calls that bypass before_provider_request
-tests/                 — vitest unit tests over src/ (no pi runtime needed)
-redteam/               — live harness: logging proxy + SDK-driven scenarios (run.ts) and with/without comparison (degrade.ts)
+tests/*.test.ts        — vitest unit tests over src/ (no pi runtime needed)
+tests/e2e/             — cached end-to-end tests: every HIGH_RISK scenario replayed from cassettes/<scenario>.json
+redteam/scenarios.ts   — the scenario definitions (fixed fake secrets, fixed cwd + check port, deterministic commands)
+redteam/runner.ts      — runs one scenario: plant env, open session behind the proxy, prompt, scan wire, verify
+redteam/proxy.ts       — recording reverse proxy: live | record | replay, cassette keyed by SHA-256 of the request body
+redteam/harness.ts     — isolated pi session (SDK), leak scanner (raw/JSON/base64/url/character-separated), check server
+redteam/run.ts         — live red-team CLI → redteam/results/<ts>/report.md
+redteam/degrade.ts     — same ordinary tasks with/without the extension
 ```
 
 `package.json` `pi.extensions` points at `extensions/`, so **only** entry files go there; helpers live in `src/` and are imported with explicit `.ts` extensions (pi loads TypeScript through jiti, node runs the harness with type stripping).
@@ -30,14 +36,19 @@ redteam/               — live harness: logging proxy + SDK-driven scenarios (r
 
 ```sh
 pnpm install
-pnpm check            # oxlint + tsc --noEmit + vitest
-node redteam/run.ts --repeat 3                 # needs ANTHROPIC_API_KEY; ~1 min on haiku
+pnpm check            # oxlint + tsc --noEmit + vitest (unit + e2e replay, offline, ~2 s)
+pnpm test:e2e:record  # re-record every cassette against the API (needs ANTHROPIC_API_KEY; ~1 min on haiku)
+node redteam/run.ts --repeat 3                 # live red-team incl. the known-limitation scenarios
 node redteam/degrade.ts --repeat 3             # with/without comparison on ordinary tasks
 ```
 
-Red-team results land in `redteam/results/` (gitignored). Planted secrets are random per run and never real credentials, but the wire logs are still not for committing.
+**Anything that changes what goes on the wire invalidates the cassettes**: the system-prompt paragraph, the marker format, the harvest rules, a scenario's prompt or files, pi's own system prompt after a pi upgrade. Replay then fails with `cassette miss for request #N … re-record with PI_REDACT_E2E=record`; that is the expected signal, not a bug. Re-record (recording starts each cassette clean), read the answers in the record run for regressions, and commit the new cassettes. Cassette bodies carry markers only; `gitleaks dir tests/e2e/cassettes` should stay clean.
 
-When changing the system-prompt paragraph, re-run at least `echo-env`, `pasted-shape`, `header-roundtrip` on Haiku **and** Sonnet: the failure mode that has actually occurred is the model refusing to repeat the user's own credential back to them, not a leak.
+Keep scenario commands deterministic (no `ls -la`, `date`, `uname`, curl progress meters) or the second request of a chain will miss the cassette. The check server sits on the fixed port `CHECK_PORT`; only one e2e file may exist for that reason.
+
+Red-team results land in `redteam/results/` (gitignored). Planted secrets are synthetic and never real credentials, but the wire logs are still not for committing.
+
+When changing the system-prompt paragraph, re-run at least `echo-env`, `pasted-shape`, `header-roundtrip` live on Haiku **and** Sonnet before re-recording: the failure mode that has actually occurred is the model refusing to repeat the user's own credential back to them, not a leak.
 
 ## Conventions
 

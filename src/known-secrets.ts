@@ -93,9 +93,34 @@ export function looksSensitiveName(name: string): boolean {
   return SENSITIVE_NAME_TOKENS.some((token) => upper.includes(token));
 }
 
-/** True when a value is long enough and not an obvious placeholder. */
+/**
+ * Configuration words that pass the length bar but are never credentials.
+ * `SESSION_COOKIE_SECURE=production` or `TOKEN_CACHE=disabled` would otherwise
+ * erase every "production" / "disabled" the model sees.
+ */
+const CONFIG_WORDS = new Set([
+  "production",
+  "development",
+  "staging",
+  "localhost",
+  "disabled",
+  "enabled",
+  "required",
+  "optional",
+  "undefined",
+  "sandbox",
+  "internal",
+  "external",
+  "default",
+  "verbose",
+  "warning",
+  "critical",
+]);
+
+/** True when a value is long enough and not an obvious placeholder or config word. */
 export function isPlausibleSecretValue(value: string): boolean {
   if (value.length < MIN_VALUE_LENGTH) return false;
+  if (CONFIG_WORDS.has(value.toLowerCase())) return false;
   return !PLACEHOLDER_PATTERN.test(value);
 }
 

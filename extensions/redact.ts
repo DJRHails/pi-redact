@@ -49,8 +49,22 @@ function textOf(content: unknown): string[] {
   return out;
 }
 
+/**
+ * Optional fixed salt for detected-value markers, as 64 hex chars. Unset in
+ * normal use (a random salt per session); the cached end-to-end tests set it
+ * so recorded provider responses replay against identical markers.
+ */
+export const SALT_VAR = "PI_REDACT_SALT";
+
+function configuredSalt(env: NodeJS.ProcessEnv): Buffer | undefined {
+  const hex = env[SALT_VAR];
+  if (!hex) return undefined;
+  if (!/^[0-9a-f]{64}$/i.test(hex)) throw new Error(`${SALT_VAR} must be 64 hex characters (32 bytes)`);
+  return Buffer.from(hex, "hex");
+}
+
 export default function redact(pi: ExtensionAPI): void {
-  const vault = new RedactionVault();
+  const vault = new RedactionVault({ salt: configuredSalt(process.env) });
   const guard = installFetchGuard();
   guard.vault = vault;
   let learned = 0;

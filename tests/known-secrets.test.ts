@@ -39,6 +39,15 @@ describe("isPlausibleSecretValue", () => {
     expect(isPlausibleSecretValue("12345678")).toBe(true);
   });
 
+  it("leaves booleans and configuration words alone even under a sensitive name", () => {
+    for (const value of ["True", "false", "production", "Disabled", "localhost"]) {
+      expect(isPlausibleSecretValue(value), value).toBe(false);
+    }
+    expect(parseAssignments("FEATURE_TOKEN_ENABLED=True\nSESSION_SECRET_MODE=production\nAPI_KEY_HOST=hails.info")).toEqual([
+      { name: "API_KEY_HOST", value: "hails.info" },
+    ]);
+  });
+
   it("drops obvious placeholders and shell references", () => {
     for (const value of ["<your-key>", "your_api_key_here", "changeme-now", "xxxxxxxxxxxx", "${OTHER_VAR}", "$OTHER_VAR"]) {
       expect(isPlausibleSecretValue(value), value).toBe(false);

@@ -1,0 +1,73 @@
+{
+  "entries": [
+    {
+      "requestHash": "6e6feab22fe8c8c5644cfadee2db60ab2c2c586b3f12adddc52e7bef18442ca9",
+      "path": "/v1/messages?beta=true",
+      "status": 200,
+      "headers": {
+        "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+        "anthropic-ratelimit-input-tokens-limit": "36000000",
+        "anthropic-ratelimit-input-tokens-remaining": "36000000",
+        "anthropic-ratelimit-input-tokens-reset": "2026-09-11T01:46:54Z",
+        "anthropic-ratelimit-output-tokens-limit": "2000000",
+        "anthropic-ratelimit-output-tokens-remaining": "2000000",
+        "anthropic-ratelimit-output-tokens-reset": "2026-09-11T01:46:54Z",
+        "anthropic-ratelimit-requests-limit": "60000",
+        "anthropic-ratelimit-requests-remaining": "59998",
+        "anthropic-ratelimit-requests-reset": "2026-09-11T01:46:54Z",
+        "anthropic-ratelimit-tokens-limit": "38000000",
+        "anthropic-ratelimit-tokens-remaining": "38000000",
+        "anthropic-ratelimit-tokens-reset": "2026-09-11T01:46:54Z",
+        "anthropic-workspace-id": "wrkspc_017vohBVfpUyfWr97jaaPJrV",
+        "cache-control": "no-cache",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a39300575d75bbf1-FRA",
+        "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+        "content-type": "text/event-stream; charset=utf-8",
+        "date": "Fri, 11 Sep 2026 01:46:54 GMT",
+        "request-id": "req_011Cevorcwo8cmkjm4LFSkvp",
+        "server": "cloudflare",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "traceresponse": "00-5d9363e3e25e47e0a8473fb7cfb87561-61c0d000d13baea8-01",
+        "vary": "Accept-Encoding",
+        "x-robots-tag": "none"
+      },
+      "body": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011CevordPMFsyhJDX1NJNRA\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2364,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":3,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}       }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}      }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"The user wants\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" me to run a\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" bash command that ech\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"oes two\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" environment\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" variables:\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" FEATURE_TOKEN_ENABLED and SESSION\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"_SECRET_MODE. Then\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" they want me to answer whether\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" the feature is enabled and which mode is\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" set,\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" qu\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"oting both values in one sentence.\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\\n\\nLet me execute\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" the\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" bash\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\" command first.\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"EpoECpoBCBEYAipA2O/QP75m07swX5jvaV/Ybm38F/wltqVMZQOEXiJxocPw1GQB7JojjznDJog/ueep9Nm7rQOq+zJCPRP69JTI0TIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okYjk0NDk1YjUtY2IyYy00ZTg3LWFkMzYtODIzNzc4M2IyYmU0qAGPu43VBhIMMM2UFZO8727VMzwRGgwBU+RgiCPiFlMsoFwiMF6YL76mSF5pSiYWqU3bOC8X8X7YocjmItRrtogwbvkzuIHTW62JQU1+ZCoccby5fSqsAvZxszyeQ+WpjiYg0F+V+4UvNPBcFkWdtjUj3ZyZSUu/3ljl59VucKP+qY2VNjd7Bd6wFctw/eNvX6YunwJkvnHBgKHDdWgfOoTlhbYfYzcyaYGsSlyykQ1UUJyvdj51aOrKM8Qr7HexVVM6412tR04d6lXShtUTHluu/XO2A+xY3YfgR/xG4g2msc4VxGXDFLc1sMEY0sGAPs0u2iaciT2NPApcsfV0fhIvseuWsnFZv/OzfJEviigGXhzMcGsX9OtupN2fkhabgEXN4QdCLOCGkKMUnxK1MHyeMzFaDYyUjO3HuJ5QktkMFVgZ72qR5zB8mFSeTTR59hKuyq3kvxhXVata347PLjyHaauiIBeSQf77THH6EPzRZyrlylM8+0oqmxMG8wkxuZjKKxgB\"}             }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0             }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_01MQibGHdQDz3iBCaXVJ6mws\",\"name\":\"bash\",\"input\":{},\"caller\":{\"type\":\"direct\"}}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"command\\\": \\\"echo $FEATURE_\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"TOKEN_ENABLED $SESSION_SECRET\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"_MODE\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\\\"}\"}     }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1             }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":2364,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":137,\"output_tokens_details\":{\"thinking_tokens\":69}}        }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"     }\n\n"
+    },
+    {
+      "requestHash": "f4efde67d240afa1bc64659b4946b4bb2c22a26fd9ad45a9f036997199e393ba",
+      "path": "/v1/messages?beta=true",
+      "status": 200,
+      "headers": {
+        "anthropic-organization-id": "b94495b5-cb2c-4e87-ad36-8237783b2be4",
+        "anthropic-ratelimit-input-tokens-limit": "36000000",
+        "anthropic-ratelimit-input-tokens-remaining": "36000000",
+        "anthropic-ratelimit-input-tokens-reset": "2026-09-11T01:46:55Z",
+        "anthropic-ratelimit-output-tokens-limit": "2000000",
+        "anthropic-ratelimit-output-tokens-remaining": "2000000",
+        "anthropic-ratelimit-output-tokens-reset": "2026-09-11T01:46:55Z",
+        "anthropic-ratelimit-requests-limit": "60000",
+        "anthropic-ratelimit-requests-remaining": "59998",
+        "anthropic-ratelimit-requests-reset": "2026-09-11T01:46:55Z",
+        "anthropic-ratelimit-tokens-limit": "38000000",
+        "anthropic-ratelimit-tokens-remaining": "38000000",
+        "anthropic-ratelimit-tokens-reset": "2026-09-11T01:46:55Z",
+        "anthropic-workspace-id": "wrkspc_017vohBVfpUyfWr97jaaPJrV",
+        "cache-control": "no-cache",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "a393005fa93cbbf1-FRA",
+        "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+        "content-type": "text/event-stream; charset=utf-8",
+        "date": "Fri, 11 Sep 2026 01:46:55 GMT",
+        "request-id": "req_011CevoriYQ1hzT3VFSyWHE1",
+        "server": "cloudflare",
+        "server-timing": "x-originResponse;dur=273",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "traceresponse": "00-5f3be7d815815bbc037c62549ded94a2-1d297758bb53847f-01",
+        "vary": "Accept-Encoding",
+        "x-robots-tag": "none"
+      },
+      "body": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011Cevorip28MbRkYhMXDccx\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2331,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":2,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}             }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"The feature\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" is enabled with\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" `\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"FEATURE_TOKEN_ENABLED`\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" set to \\\"True\\\"\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" and `SESSION_SECRET_MODE`\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" is\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" set to \\\"production\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\\".\"}        }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0              }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":2331,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":36}               }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"    }\n\n"
+    }
+  ]
+}

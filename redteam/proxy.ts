@@ -1,29 +1,76 @@
 /**
- * Logging reverse proxy in front of the Anthropic API.
+ * Recording reverse proxy in front of the Anthropic API.
  *
  * Runs in the harness process and records every request body it receives
  * before forwarding it upstream, so a scenario can assert on the exact bytes
  * pi sent. `rawFetch` is captured at import time, before any extension can
  * wrap `globalThis.fetch`, so the forward leg is never itself redacted and the
  * log reflects what the client emitted.
+ *
+ * Three modes:
+ * - `live`    — forward and stream every response (the red-team CLI default).
+ * - `record`  — forward, buffer the response, and append it to the cassette.
+ * - `replay`  — serve responses from the cassette; a miss is a hard error that
+ *               names the request so the cassette can be re-recorded.
+ *
+ * Cassette entries are keyed by the SHA-256 of the request body. Bodies only
+ * ever contain markers (the extension redacts before the proxy sees them), so
+ * a cassette holds no planted secret in plain text.
  */
 
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { dirname } from "node:path";
 import { Readable } from "node:stream";
 
 const rawFetch = globalThis.fetch;
+
+export type ProxyMode = "live" | "record" | "replay";
 
 export interface WireRequest {
   seq: number;
   at: string;
   path: string;
   body: string;
+  /** Whether the response came from the cassette. */
+  replayed: boolean;
+}
+
+export interface CassetteEntry {
+  /** SHA-256 of path + body; named so secret scanners do not mistake it for a credential. */
+  requestHash: string;
+  path: string;
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+}
+
+export interface Cassette {
+  file: string;
+  entries: CassetteEntry[];
 }
 
 export interface LoggingProxy {
   url: string;
   requests: WireRequest[];
+  mode: ProxyMode;
   close(): Promise<void>;
+}
+
+export function loadCassette(file: string): Cassette {
+  if (!existsSync(file)) return { file, entries: [] };
+  const parsed = JSON.parse(readFileSync(file, "utf8")) as { entries: CassetteEntry[] };
+  return { file, entries: parsed.entries };
+}
+
+export function saveCassette(cassette: Cassette): void {
+  mkdirSync(dirname(cassette.file), { recursive: true });
+  writeFileSync(cassette.file, `${JSON.stringify({ entries: cassette.entries }, null, 2)}\n`);
+}
+
+export function requestKey(path: string, body: string): string {
+  return createHash("sha256").update(path).update("\0").update(body).digest("hex");
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -35,7 +82,7 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-const HOP_BY_HOP = new Set(["host", "connection", "content-length", "transfer-encoding", "keep-alive"]);
+const HOP_BY_HOP = new Set(["host", "connection", "content-length", "transfer-encoding", "keep-alive", "content-encoding"]);
 
 function forwardHeaders(req: IncomingMessage): Headers {
   const headers = new Headers();
@@ -46,19 +93,61 @@ function forwardHeaders(req: IncomingMessage): Headers {
   return headers;
 }
 
-async function relay(upstream: string, requests: WireRequest[], req: IncomingMessage, res: ServerResponse): Promise<void> {
+function responseHeaders(response: Response): Record<string, string> {
+  const out: Record<string, string> = {};
+  response.headers.forEach((value, name) => {
+    if (!HOP_BY_HOP.has(name)) out[name] = value;
+  });
+  return out;
+}
+
+interface ProxyState {
+  upstream: string;
+  mode: ProxyMode;
+  cassette?: Cassette;
+  requests: WireRequest[];
+}
+
+async function relay(state: ProxyState, req: IncomingMessage, res: ServerResponse): Promise<void> {
   const body = await readBody(req);
-  requests.push({ seq: requests.length + 1, at: new Date().toISOString(), path: req.url ?? "/", body });
-  const response = await rawFetch(`${upstream}${req.url ?? "/"}`, {
+  const path = req.url ?? "/";
+  const key = requestKey(path, body);
+  const cached = state.cassette?.entries.find((entry) => entry.requestHash === key);
+  const record: WireRequest = { seq: state.requests.length + 1, at: new Date().toISOString(), path, body, replayed: false };
+  state.requests.push(record);
+
+  if (state.mode === "replay") {
+    if (!cached) {
+      throw new Error(
+        `cassette miss for request #${record.seq} ${path} (key ${key.slice(0, 12)}…) in ${state.cassette?.file ?? "(no cassette)"}; ` +
+          "re-record with PI_REDACT_E2E=record",
+      );
+    }
+    record.replayed = true;
+    res.writeHead(cached.status, cached.headers);
+    res.end(cached.body);
+    return;
+  }
+
+  const response = await rawFetch(`${state.upstream}${path}`, {
     method: req.method,
     headers: forwardHeaders(req),
     body: body.length > 0 ? body : undefined,
   });
-  const responseHeaders: Record<string, string> = {};
-  response.headers.forEach((value, name) => {
-    if (!HOP_BY_HOP.has(name) && name !== "content-encoding") responseHeaders[name] = value;
-  });
-  res.writeHead(response.status, responseHeaders);
+
+  if (state.mode === "record" && state.cassette) {
+    const text = await response.text();
+    const entry: CassetteEntry = { requestHash: key, path, status: response.status, headers: responseHeaders(response), body: text };
+    const existing = state.cassette.entries.findIndex((candidate) => candidate.requestHash === key);
+    if (existing === -1) state.cassette.entries.push(entry);
+    else state.cassette.entries[existing] = entry;
+    saveCassette(state.cassette);
+    res.writeHead(entry.status, entry.headers);
+    res.end(text);
+    return;
+  }
+
+  res.writeHead(response.status, responseHeaders(response));
   if (!response.body) {
     res.end();
     return;
@@ -66,12 +155,26 @@ async function relay(upstream: string, requests: WireRequest[], req: IncomingMes
   Readable.fromWeb(response.body as import("node:stream/web").ReadableStream).pipe(res);
 }
 
-export function startLoggingProxy(upstream = "https://api.anthropic.com"): Promise<LoggingProxy> {
-  const requests: WireRequest[] = [];
+export interface ProxyOptions {
+  upstream?: string;
+  mode?: ProxyMode;
+  cassette?: Cassette;
+}
+
+export function startLoggingProxy(options: ProxyOptions = {}): Promise<LoggingProxy> {
+  const state: ProxyState = {
+    upstream: options.upstream ?? "https://api.anthropic.com",
+    mode: options.mode ?? "live",
+    cassette: options.cassette,
+    requests: [],
+  };
+  if (state.mode !== "live" && !state.cassette) throw new Error(`proxy mode ${state.mode} needs a cassette`);
   const server: Server = createServer((req, res) => {
-    relay(upstream, requests, req, res).catch((error: unknown) => {
+    relay(state, req, res).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`proxy: ${message}`);
       res.writeHead(502, { "content-type": "text/plain" });
-      res.end(`proxy error: ${error instanceof Error ? error.message : String(error)}`);
+      res.end(`proxy error: ${message}`);
     });
   });
   return new Promise((resolve) => {
@@ -80,7 +183,8 @@ export function startLoggingProxy(upstream = "https://api.anthropic.com"): Promi
       if (!address || typeof address === "string") throw new Error("proxy did not bind a TCP port");
       resolve({
         url: `http://127.0.0.1:${address.port}`,
-        requests,
+        requests: state.requests,
+        mode: state.mode,
         close: () => new Promise((done) => server.close(() => done())),
       });
     });

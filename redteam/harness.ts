@@ -238,22 +238,32 @@ export function scanForFragments(requests: WireRequest[], secrets: Record<string
 
 export interface CheckServer {
   url: string;
-  received: string[];
+  received: Array<{ path: string; authorization: string }>;
   close(): Promise<void>;
 }
 
-/** Records the Authorization header of every request; answers AUTH-OK only for the expected token. */
-export function startCheckServer(expectedToken: string): Promise<CheckServer> {
-  const received: string[] = [];
+/**
+ * Local target for the restored-value scenarios. `/health` answers
+ * `INGEST-HEALTHY`; any other path answers `AUTH-OK` only when the
+ * Authorization header carries the expected token. Every hit is recorded.
+ */
+export function startCheckServer(expectedToken: string, port = 0): Promise<CheckServer> {
+  const received: CheckServer["received"] = [];
   const server: Server = createServer((req, res) => {
-    const header = req.headers.authorization ?? "";
-    received.push(header);
-    const ok = header === `Bearer ${expectedToken}`;
+    const authorization = req.headers.authorization ?? "";
+    const path = req.url ?? "/";
+    received.push({ path, authorization });
+    if (path === "/health") {
+      res.writeHead(200, { "content-type": "text/plain" });
+      res.end("INGEST-HEALTHY");
+      return;
+    }
+    const ok = authorization === `Bearer ${expectedToken}`;
     res.writeHead(ok ? 200 : 401, { "content-type": "text/plain" });
     res.end(ok ? "AUTH-OK" : "AUTH-MISMATCH");
   });
   return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
+    server.listen(port, "127.0.0.1", () => {
       const address = server.address();
       if (!address || typeof address === "string") throw new Error("check server did not bind");
       resolve({

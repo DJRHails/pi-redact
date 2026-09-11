@@ -17,6 +17,9 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:unit": "vitest run --exclude 'tests/e2e/**'",
+    "test:e2e": "vitest run tests/e2e",
+    "test:e2e:record": "PI_REDACT_E2E=record vitest run tests/e2e",
     "lint": "oxlint extensions src tests redteam",
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
