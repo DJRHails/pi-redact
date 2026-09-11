@@ -54,4 +54,5 @@ When changing the system-prompt paragraph, re-run at least `echo-env`, `pasted-s
 
 - Single-purpose modules; keep the pure logic in `src/` importable without pi.
 - Conventional Commits.
-- No build step, no transpilation, no runtime dependencies (pi installs git packages with `npm install --omit=dev`).
+- No build step, no transpilation, no runtime dependencies (pi installs git packages with `npm install --omit=dev`). No `peerDependencies` on the pi packages either: npm 7+ auto-installs peers, which put a second full copy of pi-coding-agent into every installed clone. pi aliases those imports itself, and only types are imported here anyway.
+- When testing the extension through `pi -p` from a non-interactive harness, redirect stdin from `/dev/null`: print mode drains a non-TTY stdin to EOF, and an open pipe that never closes looks exactly like a startup hang (an hour was lost to this on 2026-09-11).
