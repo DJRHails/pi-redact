@@ -1,7 +1,11 @@
-# Detector fixtures in the unit tests are token-shaped by construction; every
-# value there is synthetic and documented as such. Nothing else is allowlisted.
+# Token-shaped fixtures live in two places by construction: the detector unit
+# tests and the red-team scenario definitions. Every value there is synthetic
+# and documented as such. Nothing else is allowlisted; cassettes are scanned.
 [extend]
 useDefault = true
 
 [allowlist]
-paths = ['''tests/detectors\.test\.ts''']
+paths = [
+  '''tests/detectors\.test\.ts''',
+  '''redteam/scenarios\.ts''',
+]
