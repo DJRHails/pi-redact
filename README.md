@@ -9,6 +9,44 @@ model:  curl -H "Authorization: Bearer [REDACTED:KNOWN:GITHUB_TOKEN]" …
 tool:   curl -H "Authorization: Bearer ghp_actualValue…" …       ← restored before execution
 ```
 
+**Status: early prototype, version 0.1.0.** It was written and committed in one day
+(2026-09-11, four commits) against pi 0.85.1 and has not changed since. It has no CI, and this
+repo records no production use. It exists to stop *accidental* credential exposure (a
+`cat .env`, an `env` dump, a token in a log); it is not a defence against deliberate
+exfiltration.
+
+## Key takeaways
+
+- **Credentials the host knows, and common credential shapes, are swapped for markers on the way
+  out and restored on the way back in.** Sources are env vars, `.env` files and tool output, plus
+  regex detectors for common vendor formats. [confidence: ~85% for the covered paths — 38 unit
+  tests over the vault, harvesting, detectors and fetch guard, re-run in a 2026-10 audit]
+  → [What gets redacted](#what-gets-redacted)
+- **The guarantee rests on hook coverage, and the hooks miss some calls.** In pi 0.85.1,
+  `before_provider_request` does not fire for compaction, branch summaries or `complete()`
+  side-calls. A `globalThis.fetch` guard backstops those. A pi upgrade can change either side.
+  [confidence: ~75% — design documented in `AGENTS.md`; the `compaction` scenario is the only
+  end-to-end check of the guard] → [How it hooks into pi](#how-it-hooks-into-pi)
+- **Re-encoded values leak.** Matching is exact-value only, so `| base64`, split or
+  character-separated output reaches the model. In the author's red-team runs, Haiku 4.5
+  complied with every such request. [confidence: ~90% for the mechanism, which follows from
+  exact matching; the per-model refusal counts are 2–4 runs each and their reports aren't
+  committed] → [Limitations](#limitations)
+- **The cached end-to-end suite only replays at the checkout path and `TMPDIR` it was recorded
+  with.** Cassettes are
+  keyed on the SHA-256 of the request body. That body contains pi's system prompt, which embeds
+  absolute paths: the `node_modules` location of pi's docs and a `tmpdir()`-based working
+  directory. In the 2026-10 audit, in a fresh clone at another path, all 10 e2e scenarios
+  failed with `cassette miss` while the 38 unit tests passed. → [Verification](#verification)
+
+**What the protection rests on.** Two things: (1) every outbound request passes through the
+before-request hook or the fetch guard, and (2) secrets reach the model only as exact literals.
+The first is a property of pi's internals at the tested version. The second is the documented
+boundary of the approach, which it shares with palst.
+
+*How to read this:* confidence tags are an assessment of the evidence in this repo (sample sizes,
+seeds, intervals), added in a 2026-10 README audit; they are not new measurements.
+
 ## Install
 
 ```sh
@@ -57,12 +95,16 @@ PI_REDACT_E2E=record pnpm test:e2e -t echo-env   # re-record one scenario
 
 Determinism comes from `redteam/scenarios.ts`: fixed fake secrets, a fixed working directory per scenario, a fixed check-server port, and a fixed marker salt via `PI_REDACT_SALT` (unset in normal use, where the salt is random per session).
 
+**Caveat: replay is portable only between identical environments.** The "fixed working directory" is `join(tmpdir(), "pi-redact-e2e", <scenario>)`, so it depends on `TMPDIR`. pi's system prompt also lists the absolute paths of its own docs inside `node_modules`, so it depends on where the repo is checked out. Both strings sit in the hashed request body. In the 2026-10 audit, a fresh clone under a different path (Linux, `pnpm install --frozen-lockfile`) failed every one of the 10 scenarios on the first request, `cassette miss for request #1`, and the run took about three minutes instead of two seconds. Dumping a missed request body confirmed both paths are present. Until the key normalises those paths, treat a cassette miss on a new machine as an environment mismatch rather than a regression, and use `pnpm test:unit` (38 tests, offline) as the portable check.
+
 **Live red-team** runs the same scenarios plus the adversarial ones against the API and writes a report:
 
 ```sh
 node redteam/run.ts --model claude-haiku-4-5 --repeat 3   # → redteam/results/<ts>/report.md
 node redteam/degrade.ts --repeat 3                         # same tasks with/without the extension
 ```
+
+There are 13 scenarios: 10 high-risk ones that must not leak, and 3 known-limitation ones. Red-team reports land in the gitignored `redteam/results/`, so the per-model counts quoted under [Limitations](#limitations) can't be checked from the repo. No results from `degrade.ts` are recorded anywhere in the repo.
 
 Scenarios cover: env values printed by tools, a curl header round-trip against a local server that only accepts the real token, markers inside `write`-tool arguments, secrets learned from a file the model `cat`s, JSON-escaped passwords, credentials pasted into the prompt, vendor-shaped values under innocuous variable names, booleans and config words that must *not* be redacted, a redacted host:port used inside a URL, and forced compaction. Adversarial cases (base64 re-encoding, printing a value in halves, asking the model to reveal a marker character by character) are included and reported as known limitations.
 
@@ -80,9 +122,16 @@ Scenarios cover: env values printed by tools, a curl header round-trip against a
 ```sh
 pnpm install
 pnpm check
+pnpm test:unit   # unit suite only: portable, offline (see the replay caveat under Verification)
 ```
 
-Extension entry: `extensions/redact.ts`. Pure logic lives in `src/` (`known-secrets.ts`, `detectors.ts`, `vault.ts`, `fetch-guard.ts`) and is what the unit tests import. pi loads the TypeScript directly; there is no build step.
+Extension entry: `extensions/redact.ts`. Pure logic lives in `src/` (`known-secrets.ts`, `detectors.ts`, `vault.ts`, `fetch-guard.ts`) and is what the unit tests import. pi loads the TypeScript directly; there is no build step. Maintainer notes, including the invariants to preserve and the cassette re-record workflow, are in [`AGENTS.md`](AGENTS.md).
+
+## Status and provenance
+
+The approach ports palst's transcript redaction: `src/known-secrets.ts` ports palst's `known_secrets.py` harvesting, and `src/detectors.ts` ports a subset of the credential rules in its `pii_rules.py`. One deliberate change is a minimum value length of 8 rather than palst's 5, because a false positive here rewrites live model input. The first commit added the extension, unit tests, the red-team harness and the with/without comparison. The second turned the logging proxy into a record/replay proxy with committed cassettes and added the benign-value and hostname scenarios. The last two allowlisted the synthetic fixtures for gitleaks and dropped the `peerDependencies` on pi. The dev dependencies pin pi 0.85.1, the only version the hook-coverage notes above were checked against.
+
+This README's status line, takeaways, replay caveat and provenance were added in a 2026-10 audit. The audit ran `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck` and `pnpm test:unit` (38/38 passed) and the full `pnpm check`, whose 10 e2e scenarios failed on cassette misses as described above. It made no live API calls and did not install the extension into a pi session.
 
 ## License
 
