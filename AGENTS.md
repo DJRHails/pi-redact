@@ -14,7 +14,7 @@ tests/*.test.ts        — vitest unit tests over src/ (no pi runtime needed)
 tests/e2e/             — cached end-to-end tests: every HIGH_RISK scenario replayed from cassettes/<scenario>.json
 redteam/scenarios.ts   — the scenario definitions (fixed fake secrets, fixed cwd + check port, deterministic commands)
 redteam/runner.ts      — runs one scenario: plant env, open session behind the proxy, prompt, scan wire, verify
-redteam/proxy.ts       — recording reverse proxy: live | record | replay, cassette keyed by SHA-256 of the request body
+redteam/proxy.ts       — recording reverse proxy: live | record | replay, cassette keyed by SHA-256 of the request body with checkout/tmp/home paths normalised
 redteam/harness.ts     — isolated pi session (SDK), leak scanner (raw/JSON/base64/url/character-separated), check server
 redteam/run.ts         — live red-team CLI → redteam/results/<ts>/report.md
 redteam/degrade.ts     — same ordinary tasks with/without the extension
